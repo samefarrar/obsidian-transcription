@@ -107,7 +107,7 @@ export default class DeepgramPlugin extends Plugin {
       paragraphs: this.settings.paragraphs,
       utterances: this.settings.utterances,
       filler_words: this.settings.filler_words,
-      interim_results: false,
+      interim_results: true,
     };
 
     const deepgramClient = createClient(this.settings.apiKey);
@@ -124,8 +124,7 @@ export default class DeepgramPlugin extends Plugin {
 
       this.deepgram.addListener(LiveTranscriptionEvents.Transcript, (data) => {
         const transcript = data.channel.alternatives[0].transcript;
-        const speechFinal = data.speech_final;
-        let prev_transcript_length: number = 0;
+        const isFinal = data.is_final;
 
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView) {
@@ -133,20 +132,15 @@ export default class DeepgramPlugin extends Plugin {
           const currentPosition = editor.getCursor();
           console.log("Transcript: ", transcript);
 
-          if (speechFinal) {
+          if (isFinal) {
             console.log("Final transcript:", transcript);
             const startPosition = currentPosition;
-            const replacePosition = {
-              line: currentPosition.line,
-              ch: currentPosition.ch + prev_transcript_length,
-            };
-            editor.replaceRange(transcript, startPosition, replacePosition);
+            editor.replaceRange(transcript, startPosition);
             const endPosition = {
               line: currentPosition.line,
               ch: currentPosition.ch + transcript.length,
             };
             editor.setCursor(endPosition); // Set the cursor at the end of the inserted text
-            prev_transcript_length = 0;
           } else {
             console.log("Partial transcript:", transcript);
           }
