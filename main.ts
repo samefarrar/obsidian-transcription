@@ -108,6 +108,7 @@ export default class DeepgramPlugin extends Plugin {
       utterances: this.settings.utterances,
       filler_words: this.settings.filler_words,
       interim_results: true,
+      endpointing:2000
     };
 
     const deepgramClient = createClient(this.settings.apiKey);
@@ -134,11 +135,12 @@ export default class DeepgramPlugin extends Plugin {
 
           if (isFinal) {
             console.log("Final transcript:", transcript);
+            const formatted_transcript = transcript + " ";
             const startPosition = currentPosition;
-            editor.replaceRange(transcript, startPosition);
+            editor.replaceRange(formatted_transcript, startPosition);
             const endPosition = {
               line: currentPosition.line,
-              ch: currentPosition.ch + transcript.length,
+              ch: currentPosition.ch + formatted_transcript.length,
             };
             editor.setCursor(endPosition); // Set the cursor at the end of the inserted text
           } else {
