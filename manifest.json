@@ -1,7 +1,7 @@
 {
     "id": "deepgram-transcription",
     "name": "Deepgram Transcription",
-    "version": "1.0.0",
+    "version": "v1.0.0",
     "minAppVersion": "0.12.15",
     "description": "Provides real-time audio transcription in Obsidian notes using the Deepgram API.",
     "author": "Sam Farrar",
