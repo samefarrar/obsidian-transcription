@@ -128,50 +128,42 @@ export default class DeepgramPlugin extends Plugin {
       console.log("Deepgram connection opened");
       this.isRecording = true;
       this.updateStatusBarItem();
-    });
 
-    deepgram.addListener(LiveTranscriptionEvents.Transcript, (data) => {
-      const transcript = data.channel.alternatives[0].transcript;
-      const isFinal = data.is_final;
+      deepgram.addListener(LiveTranscriptionEvents.Transcript, (data) => {
+        const transcript = data.channel.alternatives[0].transcript;
+        const isFinal = data.is_final;
 
-      const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-      if (activeView) {
-        const editor = activeView.editor;
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (activeView) {
+          const editor = activeView.editor;
 
-        const endPosition = {
-          line: this.initialCursorPosition.line,
-          ch: this.initialCursorPosition.ch + this.transcriptLength,
-        };
-
-        console.log(
-          "Adding transcript: ",
-          transcript,
-          " at ",
-          this.initialCursorPosition,
-          " to ",
-          endPosition
-        );
-
-        editor.replaceRange(
-          transcript,
-          this.initialCursorPosition,
-          endPosition
-        );
-        this.transcriptLength = transcript.length;
-
-        if (isFinal) {
-          const finalCursorPosition = {
+          const endPosition = {
             line: this.initialCursorPosition.line,
             ch: this.initialCursorPosition.ch + this.transcriptLength,
           };
-          editor.setCursor(finalCursorPosition);
-        }
-      }
-    });
 
-    deepgram.addListener(LiveTranscriptionEvents.Error, (error) => {
-      console.error("Deepgram error:", error);
-      this.stopTranscription();
+          console.log(
+            "Adding transcript: ",
+            transcript,
+            " at ",
+            this.initialCursorPosition,
+            " to ",
+            endPosition
+          );
+
+          editor.replaceRange(
+            transcript,
+            this.initialCursorPosition,
+            endPosition
+          );
+          this.transcriptLength = transcript.length;
+        }
+      });
+
+      deepgram.addListener(LiveTranscriptionEvents.Error, (error) => {
+        console.error("Deepgram error:", error);
+        this.stopTranscription();
+      });
     });
 
     const mediaStream = await navigator.mediaDevices.getUserMedia({
