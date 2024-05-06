@@ -30,8 +30,8 @@ const DEFAULT_SETTINGS: DeepGramPluginSettings = {
   topic_detection: false,
   intent_detection: false,
   sentiment: false,
-  smart_format: false,
-  punctuation: false,
+  smart_format: true,
+  punctuation: true,
   paragraphs: false,
   utterances: false,
   filler_words: false,
@@ -42,7 +42,6 @@ export default class DeepgramPlugin extends Plugin {
   isRecording: boolean = false;
   statusBarItem: HTMLElement;
   initialCursorPosition: EditorPosition;
-  transcriptLength: number = 0;
   deepgram: Deepgram; // Add this line to declare the deepgram property
   mediaRecorder: MediaRecorder; // Add this line to declare the mediaRecorder property
 
@@ -96,12 +95,6 @@ export default class DeepgramPlugin extends Plugin {
   async startTranscription() {
     console.log("Starting transcription");
 
-    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-    if (activeView) {
-      const editor = activeView.editor;
-      this.initialCursorPosition = editor.getCursor();
-    }
-
     const options = {
       model: "nova-2",
       language: "en-US",
@@ -114,7 +107,7 @@ export default class DeepgramPlugin extends Plugin {
       paragraphs: this.settings.paragraphs,
       utterances: this.settings.utterances,
       filler_words: this.settings.filler_words,
-      interim_results: true,
+      interim_results: false,
     };
 
     const deepgramClient = createClient(this.settings.apiKey);
@@ -124,46 +117,46 @@ export default class DeepgramPlugin extends Plugin {
 
     console.log("Deepgram client created", deepgram);
 
-    deepgram.addListener(LiveTranscriptionEvents.Open, () => {
+    this.deepgram.addListener(LiveTranscriptionEvents.Open, () => {
       console.log("Deepgram connection opened");
       this.isRecording = true;
       this.updateStatusBarItem();
 
-      deepgram.addListener(LiveTranscriptionEvents.Transcript, (data) => {
+      this.deepgram.addListener(LiveTranscriptionEvents.Transcript, (data) => {
         const transcript = data.channel.alternatives[0].transcript;
-        const isFinal = data.is_final;
+        const speechFinal = data.speech_final;
+        let prev_transcript_length: number = 0;
 
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView) {
           const editor = activeView.editor;
+          const currentPosition = editor.getCursor();
+          console.log("Transcript: ", transcript);
 
-          const endPosition = {
-            line: this.initialCursorPosition.line,
-            ch: this.initialCursorPosition.ch + this.transcriptLength,
-          };
-
-          console.log(
-            "Adding transcript: ",
-            transcript,
-            " at ",
-            this.initialCursorPosition,
-            " to ",
-            endPosition
-          );
-
-          editor.replaceRange(
-            transcript,
-            this.initialCursorPosition,
-            endPosition
-          );
-          this.transcriptLength = transcript.length;
+          if (speechFinal) {
+            console.log("Final transcript:", transcript);
+            const startPosition = currentPosition;
+            const replacePosition = {
+              line: currentPosition.line,
+              ch: currentPosition.ch + prev_transcript_length,
+            };
+            editor.replaceRange(transcript, startPosition, replacePosition);
+            const endPosition = {
+              line: currentPosition.line,
+              ch: currentPosition.ch + transcript.length,
+            };
+            editor.setCursor(endPosition); // Set the cursor at the end of the inserted text
+            prev_transcript_length = 0;
+          } else {
+            console.log("Partial transcript:", transcript);
+          }
         }
       });
+    });
 
-      deepgram.addListener(LiveTranscriptionEvents.Error, (error) => {
-        console.error("Deepgram error:", error);
-        this.stopTranscription();
-      });
+    this.deepgram.addListener(LiveTranscriptionEvents.Error, (error) => {
+      console.error("Deepgram error:", error);
+      this.stopTranscription();
     });
 
     const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -224,6 +217,113 @@ class DeepgramSettingTab extends PluginSettingTab {
           })
       );
 
+    new Setting(containerEl)
+      .setName("Summarize")
+      .setDesc("Enable summarization")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.summarize)
+          .onChange(async (value) => {
+            this.plugin.settings.summarize = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Topic Detection")
+      .setDesc("Enable topic detection")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.topic_detection)
+          .onChange(async (value) => {
+            this.plugin.settings.topic_detection = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Intent Detection")
+      .setDesc("Enable intent detection")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.intent_detection)
+          .onChange(async (value) => {
+            this.plugin.settings.intent_detection = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Sentiment")
+      .setDesc("Enable sentiment analysis")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.sentiment)
+          .onChange(async (value) => {
+            this.plugin.settings.sentiment = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Smart Formatting")
+      .setDesc("Enable smart formatting")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.smart_format)
+          .onChange(async (value) => {
+            this.plugin.settings.smart_format = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Punctuation")
+      .setDesc("Enable punctuation")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.punctuation)
+          .onChange(async (value) => {
+            this.plugin.settings.punctuation = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Paragraphs")
+      .setDesc("Enable paragraph detection")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.paragraphs)
+          .onChange(async (value) => {
+            this.plugin.settings.paragraphs = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Utterances")
+      .setDesc("Enable utterance detection")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.utterances)
+          .onChange(async (value) => {
+            this.plugin.settings.utterances = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Filler Words")
+      .setDesc("Include filler words")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.filler_words)
+          .onChange(async (value) => {
+            this.plugin.settings.filler_words = value;
+            await this.plugin.saveSettings();
+          })
+      );
     // Add settings for other transcription options
     // ...
   }
