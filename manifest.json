@@ -1,11 +1,13 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.0",
-	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
-	"isDesktopOnly": false
+    "id": "deepgram-transcription",
+    "name": "Deepgram Transcription",
+    "version": "1.0.0",
+    "minAppVersion": "0.12.15",
+    "description": "Provides real-time audio transcription in Obsidian notes using the Deepgram API.",
+    "author": "Sam Farrar",
+    "authorUrl": "https://yourwebsite.com",
+    "fundingUrl": {
+        "GitHub Sponsor": "https://github.com/sponsors/samefarrar"
+    },
+    "isDesktopOnly": true
 }
