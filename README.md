@@ -53,5 +53,3 @@ Create a pull request to the Obsidian community plugin repository to include you
 
 API Documentation
 For detailed information about API integration, visit Deepgram API documentation.
-
-This README provides essential information for both users and developers to get started with the Deepgram Transcription Plugin for Obsidian, facilitating easy setup, use, and customization.
